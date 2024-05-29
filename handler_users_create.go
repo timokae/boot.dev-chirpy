@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+
+	auth "github.com/timokae/boot.dev-chirpy-auth"
 )
 
 func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
@@ -20,7 +22,12 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	user, err := cfg.db.CreateUser(params.Email, params.Password)
+	hashedPassword, err := auth.HashPassword(params.Password)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not hash password")
+	}
+
+	user, err := cfg.db.CreateUser(params.Email, hashedPassword)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Could not create user")
 	}

@@ -1,10 +1,7 @@
 package database
 
 import (
-	"fmt"
 	"sort"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
@@ -13,7 +10,7 @@ type User struct {
 	Password string `json:"password"`
 }
 
-func (db *DB) CreateUser(email, password string) (User, error) {
+func (db *DB) CreateUser(email, hashedPassword string) (User, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return User{}, err
@@ -31,16 +28,10 @@ func (db *DB) CreateUser(email, password string) (User, error) {
 		latestID = ids[len(ids)-1] + 1
 	}
 
-	fmt.Println(password)
-	hashBytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return User{}, err
-	}
-
 	newUser := User{
 		Id:       latestID,
 		Email:    email,
-		Password: string(hashBytes),
+		Password: hashedPassword,
 	}
 
 	dbStructure.Users[newUser.Id] = newUser

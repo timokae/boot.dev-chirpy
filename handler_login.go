@@ -2,11 +2,10 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
-	"golang.org/x/crypto/bcrypt"
+	auth "github.com/timokae/boot.dev-chirpy-auth"
 )
 
 func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
@@ -30,8 +29,7 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(user.Password)
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(params.Password))
+	err = auth.CheckPasswordHash(params.Password, user.Password)
 	if err != nil {
 		log.Println(err)
 		respondWithError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
