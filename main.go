@@ -5,7 +5,9 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"os"
 
+	"github.com/joho/godotenv"
 	database "github.com/timokae/boot.dev-chirpy-database"
 )
 
@@ -13,6 +15,16 @@ func main() {
 	const port = "8080"
 	const fileRootPath = "."
 	const dbPath = "./database.json"
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalln("Could not read .env file")
+	}
+
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatalln("JWT_SECRET not present")
+	}
 
 	dbg := flag.Bool("debug", false, "Enable debug mode")
 	flag.Parse()
@@ -34,6 +46,7 @@ func main() {
 	apiCfg := apiConfig{
 		fileServerHits: 0,
 		db:             db,
+		jwtSecret:      jwtSecret,
 	}
 
 	mux := http.NewServeMux()
@@ -53,6 +66,7 @@ func main() {
 	mux.HandleFunc("GET /api/chirps/{id}", apiCfg.handlerGetChirp)
 
 	mux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
+	mux.HandleFunc("PUT /api/users", apiCfg.handlerUpdateUser)
 	mux.HandleFunc("POST /api/login", apiCfg.handlerLogin)
 
 	server := &http.Server{
