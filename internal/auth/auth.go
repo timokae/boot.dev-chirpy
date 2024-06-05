@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
@@ -13,6 +15,8 @@ import (
 )
 
 var ErrNoAuthHeaderIncluded = errors.New("auht header not included in request")
+var JwtTokenDefaultExpiration = 1 * time.Hour
+var RefreshTokenDefaultExpiration = 60 * 24 * time.Hour
 
 func HashPassword(password string) (string, error) {
 	dat, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -77,4 +81,15 @@ func GetBearerToken(headers http.Header) (string, error) {
 	}
 
 	return splitAuth[1], nil
+}
+
+func NewRefreshToken() (string, error) {
+	b := make([]byte, 32)
+
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(b), nil
 }

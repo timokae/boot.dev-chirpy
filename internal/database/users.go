@@ -2,12 +2,15 @@ package database
 
 import (
 	"sort"
+	"time"
 )
 
 type User struct {
-	Id       int    `json:"id"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Id                     int    `json:"id"`
+	Email                  string `json:"email"`
+	Password               string `json:"password"`
+	RefreshToken           string `json:"refresh_token"`
+	RefreshTokenExpiration time.Time
 }
 
 func (db *DB) CreateUser(email, hashedPassword string) (User, error) {
@@ -47,6 +50,20 @@ func (db *DB) CreateUser(email, hashedPassword string) (User, error) {
 	}, nil
 }
 
+func (db *DB) GetUserById(id int) (User, error) {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return User{}, err
+	}
+
+	user, ok := dbStructure.Users[id]
+	if !ok {
+		return User{}, ErrNotExist
+	}
+
+	return user, nil
+}
+
 func (db *DB) GetUserByEmail(email string) (User, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
@@ -75,6 +92,8 @@ func (db *DB) UpdateUser(user User) (User, error) {
 
 	userToUpdate.Email = user.Email
 	userToUpdate.Password = user.Password
+	userToUpdate.RefreshToken = user.RefreshToken
+	userToUpdate.RefreshTokenExpiration = user.RefreshTokenExpiration
 
 	dbStructure.Users[userToUpdate.Id] = userToUpdate
 
@@ -84,4 +103,21 @@ func (db *DB) UpdateUser(user User) (User, error) {
 	}
 
 	return dbStructure.Users[user.Id], nil
+}
+
+func (db *DB) GetUserByRefreshToken(token string) (User, error) {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return User{}, err
+	}
+
+	for _, user := range dbStructure.Users {
+		if user.RefreshToken != token {
+			continue
+		}
+
+		return user, nil
+	}
+
+	return User{}, ErrNotExist
 }

@@ -11,9 +11,8 @@ import (
 
 func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Email            string `json:"email"`
-		Password         string `json:"password"`
-		ExpiresInSeconds int    `json:"expires_in_seconds,omitempty"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -38,26 +37,35 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	defaultExpiration := 60 * 60 * 24
-	if params.ExpiresInSeconds == 0 {
-		params.ExpiresInSeconds = defaultExpiration
-	} else if params.ExpiresInSeconds > defaultExpiration {
-		params.ExpiresInSeconds = defaultExpiration
-	}
-	token, err := auth.NewJWTToken(cfg.jwtSecret, user.Id, time.Duration(time.Second*time.Duration(params.ExpiresInSeconds)))
+	jwtToken, err := auth.NewJWTToken(cfg.jwtSecret, user.Id, auth.JwtTokenDefaultExpiration)
 	if err != nil {
 		log.Println(err)
 		respondWithError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 		return
 	}
 
+	refreshToken, err := auth.NewRefreshToken()
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not generate refresh token")
+		return
+	}
+
+	user.RefreshTokenExpiration = time.Now().UTC().Add(auth.RefreshTokenDefaultExpiration)
+	user.RefreshToken = refreshToken
+	user, err = cfg.db.UpdateUser(user)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not generate refresh token")
+	}
+
 	respondWithJSON(w, http.StatusOK, struct {
-		Id    int    `json:"id"`
-		Email string `json:"email"`
-		Token string `json:"token"`
+		Id           int    `json:"id"`
+		Email        string `json:"email"`
+		Token        string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 	}{
-		Id:    user.Id,
-		Email: user.Email,
-		Token: token,
+		Id:           user.Id,
+		Email:        user.Email,
+		Token:        jwtToken,
+		RefreshToken: refreshToken,
 	})
 }

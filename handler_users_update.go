@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	auth "github.com/timokae/boot.dev-chirpy-auth"
-	database "github.com/timokae/boot.dev-chirpy-database"
 )
 
 func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) {
@@ -25,7 +24,7 @@ func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) 
 
 	authToken, err := auth.GetBearerToken(r.Header)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, err.Error())
+		respondWithError(w, http.StatusUnauthorized, err.Error())
 	}
 
 	id, err := auth.VerifyJWTToken(authToken, cfg.jwtSecret)
@@ -40,11 +39,15 @@ func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	user, err := cfg.db.UpdateUser(database.User{
-		Id:       id,
-		Password: hashedPassword,
-		Email:    params.Email,
-	})
+	user, err := cfg.db.GetUserById(id)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+		return
+	}
+
+	user.Email = params.Email
+	user.Password = hashedPassword
+	user, err = cfg.db.UpdateUser(user)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Could not update user")
 		return

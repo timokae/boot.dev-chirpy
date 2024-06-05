@@ -2,12 +2,14 @@ package database
 
 import (
 	"errors"
+	"fmt"
 	"sort"
 )
 
 type Chirp struct {
-	Id   int    `json:"id"`
-	Body string `json:"body"`
+	Id       int    `json:"id"`
+	Body     string `json:"body"`
+	AuthorId int    `json:"author_id"`
 }
 
 var ErrNotExist = errors.New("resource does not exist")
@@ -42,7 +44,7 @@ func (db *DB) GetChirp(id int) (Chirp, error) {
 }
 
 // // CreateChirp creates a new chirp and saves it to disk
-func (db *DB) CreateChirp(body string) (Chirp, error) {
+func (db *DB) CreateChirp(body string, authorId int) (Chirp, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return Chirp{}, err
@@ -61,9 +63,11 @@ func (db *DB) CreateChirp(body string) (Chirp, error) {
 	}
 
 	newChirp := Chirp{
-		Id:   latestID,
-		Body: body,
+		Id:       latestID,
+		Body:     body,
+		AuthorId: authorId,
 	}
+	fmt.Println(newChirp)
 
 	dbStructure.Chirps[newChirp.Id] = newChirp
 
