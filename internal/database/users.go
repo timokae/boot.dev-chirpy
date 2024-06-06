@@ -11,6 +11,7 @@ type User struct {
 	Password               string `json:"password"`
 	RefreshToken           string `json:"refresh_token"`
 	RefreshTokenExpiration time.Time
+	IsChirpyRed            bool `json:"is_chirpy_red"`
 }
 
 func (db *DB) CreateUser(email, hashedPassword string) (User, error) {
@@ -44,10 +45,7 @@ func (db *DB) CreateUser(email, hashedPassword string) (User, error) {
 		return User{}, nil
 	}
 
-	return User{
-		Id:    newUser.Id,
-		Email: newUser.Email,
-	}, nil
+	return newUser, nil
 }
 
 func (db *DB) GetUserById(id int) (User, error) {
@@ -94,6 +92,7 @@ func (db *DB) UpdateUser(user User) (User, error) {
 	userToUpdate.Password = user.Password
 	userToUpdate.RefreshToken = user.RefreshToken
 	userToUpdate.RefreshTokenExpiration = user.RefreshTokenExpiration
+	userToUpdate.IsChirpyRed = user.IsChirpyRed
 
 	dbStructure.Users[userToUpdate.Id] = userToUpdate
 
