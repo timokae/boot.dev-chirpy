@@ -2,7 +2,6 @@ package database
 
 import (
 	"errors"
-	"fmt"
 	"sort"
 )
 
@@ -67,7 +66,6 @@ func (db *DB) CreateChirp(body string, authorId int) (Chirp, error) {
 		Body:     body,
 		AuthorId: authorId,
 	}
-	fmt.Println(newChirp)
 
 	dbStructure.Chirps[newChirp.Id] = newChirp
 
@@ -77,4 +75,15 @@ func (db *DB) CreateChirp(body string, authorId int) (Chirp, error) {
 	}
 
 	return newChirp, nil
+}
+
+func (db *DB) DeleteChirp(id int) error {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	delete(dbStructure.Chirps, id)
+
+	return nil
 }

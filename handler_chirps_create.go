@@ -27,6 +27,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 	authToken, err := auth.GetBearerToken(r.Header)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, err.Error())
+		return
 	}
 
 	id, err := auth.VerifyJWTToken(authToken, cfg.jwtSecret)
